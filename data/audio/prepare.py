@@ -68,8 +68,6 @@ assert tgts.min() < 0
 ipts, tgts = ipts + 32768, tgts + 32768
 assert ipts.min() >= 0
 assert tgts.min() >= 0
-# offset by the negative values
-ipts, tgts = ipts.astype(np.int32), tgts.astype(np.int32)
 
 # create the train and test splits
 n = len(data_x)
