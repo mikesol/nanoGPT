@@ -30,6 +30,9 @@ from torch.distributed import init_process_group, destroy_process_group
 
 from model_audio import AudioTransformerConfig, AudioTransformer
 
+def make_model(cfg):
+    return AudioTransformer(cfg)
+
 # -----------------------------------------------------------------------------
 # default config values designed to train a gpt2 (124M) on OpenWebText
 # I/O
@@ -158,7 +161,7 @@ if init_from == 'scratch':
         print("defaulting to vocab_size of GPT-2 to 50304 (50257 rounded up for efficiency)")
     model_args['vocab_size'] = meta_vocab_size if meta_vocab_size is not None else 50304
     gptconf = AudioTransformerConfig(**model_args)
-    model = AudioTransformer(gptconf)
+    model = make_model(gptconf)
 elif init_from == 'resume':
     print(f"Resuming training from {out_dir}")
     # resume training from a checkpoint.
@@ -171,7 +174,7 @@ elif init_from == 'resume':
         model_args[k] = checkpoint_model_args[k]
     # create the model
     gptconf = AudioTransformerConfig(**model_args)
-    model = AudioTransformer(gptconf)
+    model = make_model(gptconf)
     state_dict = checkpoint['model']
     # fix the keys of the state dictionary :(
     # honestly no idea how checkpoints sometimes get this prefix, have to debug more
