@@ -13,7 +13,7 @@ import sys
 
 import os
 
-data_path = '../data'
+data_path = '../data/unsilenced-aligned/'
 
 D1 = [
     os.path.join(data_path, "day1", x)
