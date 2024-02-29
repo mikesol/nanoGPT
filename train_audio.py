@@ -51,7 +51,7 @@ batch_size = 12 # if gradient_accumulation_steps > 1, this is the micro-batch si
 block_size = 1024
 # model
 n_layer = 4
-n_head = 8
+n_head = 12
 n_embd = 768
 dropout = 0.0 # for pretraining 0 is good, for finetuning try 0.1+
 bias = False # do we use bias inside LayerNorm and Linear layers?
@@ -217,7 +217,7 @@ def estimate_loss():
         for k in range(eval_iters):
             X0, X1, Y = get_batch(split)
             with ctx:
-                mask = nn.Transformer.generate_square_subsequent_mask(X1.shape[1], dtype=X1.dtype).to(device)
+                mask = nn.Transformer.generate_square_subsequent_mask(X1.shape[1]).to(device)
                 logits, loss = model(X0, X1, Y, mask)
             losses[k] = loss.item()
         out[split] = losses.mean()
@@ -294,7 +294,7 @@ while True:
             # looking at the source of that context manager, it just toggles this variable
             model.require_backward_grad_sync = (micro_step == gradient_accumulation_steps - 1)
         with ctx:
-            mask = nn.Transformer.generate_square_subsequent_mask(X1.shape[1], dtype=X1.dtype).to(device)
+            mask = nn.Transformer.generate_square_subsequent_mask(X1.shape[1]).to(device)
             logits, loss = model(X0, X1, Y, mask)
             loss = loss / gradient_accumulation_steps # scale the loss to account for gradient accumulation
         # immediately async prefetch next batch while model is doing the forward pass on the GPU
