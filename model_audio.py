@@ -65,9 +65,10 @@ class DecoderBlock(nn.Module):
         self.mlp = MLP(config)
 
     def forward(self, x, memory):
-        x = x + self.attn(self.ln_1(x), self.ln_1(x), self.ln_1(x))[0]
+        mask = nn.Transformer.generate_square_subsequent_mask(x.shape[1])
+        x = x + self.attn(self.ln_1(x), self.ln_1(x), self.ln_1(x), attn_mask=mask, is_causal=True)[0]
         if memory is not None:
-            x = x + self.crossattn(self.ln_1(x), memory, memory, is_causal=True)[0]
+            x = x + self.crossattn(self.ln_1(x), memory, memory)[0]
         x = x + self.mlp(self.ln_2(x))
         return x
 
