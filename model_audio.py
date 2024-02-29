@@ -134,7 +134,7 @@ class AudioTransformer(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def forward(self, encoder_idxs, decoder_idxs, targets=None):
+    def forward(self, encoder_idxs, decoder_idxs, targets=None, tgt_mask=None):
         device = encoder_idxs.device
         b, t = encoder_idxs.size()
         assert t <= self.config.block_size, f"Cannot forward sequence of length {t}, block size is only {self.config.block_size}"
@@ -152,7 +152,7 @@ class AudioTransformer(nn.Module):
         decoder_pos = self.transformer.wpe(torch.arange(0, decoder_idxs.size(1), device=decoder_idxs.device))
         decoder_input = self.transformer.drop(decoder_emb + decoder_pos)
         for block in self.transformer.decoder:
-            decoder_input = block(decoder_input, encoder_input)  # Assuming cross-attention is implemented
+            decoder_input = block(decoder_input, encoder_input, tgt_mask=tgt_mask)
 
         x = self.transformer.ln_f(decoder_input)
 
