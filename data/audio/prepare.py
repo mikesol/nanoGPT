@@ -42,6 +42,7 @@ def make_pairings(i):
 
 
 FILES = make_pairings(D1) + make_pairings(D2)
+FILES=[:2]
 print(FILES)
 
 ipts = np.array([])
