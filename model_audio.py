@@ -64,10 +64,10 @@ class DecoderBlock(nn.Module):
         self.ln_2 = nn.LayerNorm(config.n_embd, bias=config.bias)
         self.mlp = MLP(config)
 
-    def forward(self, x, memory, tgt_mask=None, memory_mask=None):
-        x = x + self.attn(self.ln_1(x), self.ln_1(x), self.ln_1(x), attn_mask=tgt_mask)[0]
+    def forward(self, x, memory):
+        x = x + self.attn(self.ln_1(x), self.ln_1(x), self.ln_1(x))[0]
         if memory is not None:
-            x = x + self.crossattn(self.ln_1(x), memory, memory, attn_mask=memory_mask)[0]
+            x = x + self.crossattn(self.ln_1(x), memory, memory, is_causal=True)[0]
         x = x + self.mlp(self.ln_2(x))
         return x
 
@@ -152,7 +152,7 @@ class AudioTransformer(nn.Module):
         decoder_pos = self.transformer.wpe(torch.arange(0, decoder_idxs.size(1), device=decoder_idxs.device))
         decoder_input = self.transformer.drop(decoder_emb + decoder_pos)
         for block in self.transformer.decoder:
-            decoder_input = block(decoder_input, encoder_input, tgt_mask=tgt_mask, is_causal=True)
+            decoder_input = block(decoder_input, encoder_input)
 
         x = self.transformer.ln_f(decoder_input)
 
