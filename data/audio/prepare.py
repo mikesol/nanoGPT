@@ -44,19 +44,15 @@ def make_pairings(i):
 FILES = make_pairings(D1) + make_pairings(D2)
 print(FILES)
 
-ipts = None
-tgts = None
+ipts = np.array([])
+tgts = np.array([])
 for ipt, tgt in FILES:
     _, data_x = wavfile.read(ipt)
     _, data_y = wavfile.read(tgt)
     mlen = min(data_x.shape[0], data_y.shape[0])
     data_x, data_y = data_x[:mlen], data_y[:mlen]
-    if ipts == None:
-        ipts = data_x
-        tgts = data_y
-    else:
-        ipts = np.concatenate([ipts, data_x])
-        tgts = np.concatenate([tgts, data_y])
+    ipts = np.concatenate([ipts, data_x])
+    tgts = np.concatenate([tgts, data_y])
 
 print(f"length of dataset in samples: {len(data_x):,}")
 
