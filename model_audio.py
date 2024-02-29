@@ -46,7 +46,7 @@ class EncoderBlock(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.ln_1 = nn.LayerNorm(config.n_embd, bias=config.bias)
-        self.attn = nn.MultiheadAttention(config.n_embd, config.n_head, dropout=config.dropout)
+        self.attn = nn.MultiheadAttention(config.n_embd, config.n_head, dropout=config.dropout, batch_first=True)
         self.ln_2 = nn.LayerNorm(config.n_embd, bias=config.bias)
         self.mlp = MLP(config)
 
@@ -59,8 +59,8 @@ class DecoderBlock(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.ln_1 = nn.LayerNorm(config.n_embd, bias=config.bias)
-        self.attn = nn.MultiheadAttention(config.n_embd, config.n_head, dropout=config.dropout)
-        self.crossattn = nn.MultiheadAttention(config.n_embd, config.n_head, dropout=config.dropout)
+        self.attn = nn.MultiheadAttention(config.n_embd, config.n_head, dropout=config.dropout, batch_first=True)
+        self.crossattn = nn.MultiheadAttention(config.n_embd, config.n_head, dropout=config.dropout, batch_first=True)
         self.ln_2 = nn.LayerNorm(config.n_embd, bias=config.bias)
         self.mlp = MLP(config)
 
