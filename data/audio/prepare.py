@@ -45,11 +45,13 @@ FILES = make_pairings(D1) + make_pairings(D2)
 FILES = FILES[:2]
 print(FILES)
 
-ipts = np.array([])
-tgts = np.array([])
+ipts = np.array([], dtype=np.int16)
+tgts = np.array([], dtype=np.int16)
 for ipt, tgt in FILES:
     _, data_x = wavfile.read(ipt)
     _, data_y = wavfile.read(tgt)
+    assert data_x.dtype == np.int16
+    assert data_y.dtype == np.int16
     mlen = min(data_x.shape[0], data_y.shape[0])
     data_x, data_y = data_x[:mlen], data_y[:mlen]
     ipts = np.concatenate([ipts, data_x])
