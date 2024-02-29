@@ -7,55 +7,90 @@ encoder and decoder and some other related info.
 import os
 import pickle
 import requests
+from scipy.io import wavfile
 import numpy as np
+import sys
 
-# download the tiny shakespeare dataset
-input_file_path = os.path.join(os.path.dirname(__file__), 'input.txt')
-if not os.path.exists(input_file_path):
-    data_url = 'https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt'
-    with open(input_file_path, 'w') as f:
-        f.write(requests.get(data_url).text)
+import os
 
-with open(input_file_path, 'r') as f:
-    data = f.read()
-print(f"length of dataset in characters: {len(data):,}")
+data_path = '../data'
 
-# get all the unique characters that occur in this text
-chars = sorted(list(set(data)))
-vocab_size = len(chars)
-print("all the unique characters:", ''.join(chars))
-print(f"vocab size: {vocab_size:,}")
+D1 = [
+    os.path.join(data_path, "day1", x)
+    for x in os.listdir(os.path.join(data_path, "day1"))
+]
+D2 = [
+    os.path.join(data_path, "day2", x)
+    for x in os.listdir(os.path.join(data_path, "day2"))
+]
 
-# create a mapping from characters to integers
-stoi = { ch:i for i,ch in enumerate(chars) }
-itos = { i:ch for i,ch in enumerate(chars) }
-def encode(s):
-    return [stoi[c] for c in s] # encoder: take a string, output a list of integers
-def decode(l):
-    return ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
+
+def make_pairings(i):
+    i = [x for x in i if "67_near" in x or "nt1_middle" in x]
+    D = {}
+    for x in i:
+        sp = x.split("/")[-1].split(".")[0].split("_")[-1]
+        if not (sp in D):
+            D[sp] = []
+        D[sp].append(x)
+    o = []
+    for x in D.values():
+        ii = 0 if "nt1_middle" in x[0] else 1
+        ti = 0 if ii == 1 else 1
+        o.append((x[ii], x[ti]))
+    return o
+
+
+FILES = make_pairings(D1) + make_pairings(D2)
+print(FILES)
+
+ipts = None
+tgts = None
+for ipt, tgt in FILES:
+    _, data_x = wavfile.read(ipt)
+    _, data_y = wavfile.read(tgt)
+    mlen = min(data_x.shape[0], data_y.shape[0])
+    data_x, data_y = data_x[:mlen], data_y[:mlen]
+    if ipts == None:
+        ipts = data_x
+        tgts = data_y
+    else:
+        ipts = np.concatenate([ipts, data_x])
+        tgts = np.concatenate([tgts, data_y])
+
+print(f"length of dataset in samples: {len(data_x):,}")
+
+assert ipts.dtype == np.int16
+assert tgts.dtype == np.int16
+ipts, tgts = ipts.astype(np.int32), tgts.astype(np.int32)
+assert ipts.min() < 0
+assert tgts.min() < 0
+ipts, tgts = ipts + 32768, tgts + 32768
+assert ipts.min() >= 0
+assert tgts.min() >= 0
+# offset by the negative values
+ipts, tgts = ipts.astype(np.int32), tgts.astype(np.int32)
 
 # create the train and test splits
-n = len(data)
-train_data = data[:int(n*0.9)]
-val_data = data[int(n*0.9):]
-
-# encode both to integers
-train_ids = encode(train_data)
-val_ids = encode(val_data)
-print(f"train has {len(train_ids):,} tokens")
-print(f"val has {len(val_ids):,} tokens")
+n = len(data_x)
+train_data_x = ipts[:int(n*0.9)]
+train_data_y = tgts[:int(n*0.9)]
+val_data_x = ipts[int(n*0.9):]
+val_data_y = tgts[int(n*0.9):]
 
 # export to bin files
-train_ids = np.array(train_ids, dtype=np.uint16)
-val_ids = np.array(val_ids, dtype=np.uint16)
-train_ids.tofile(os.path.join(os.path.dirname(__file__), 'train.bin'))
-val_ids.tofile(os.path.join(os.path.dirname(__file__), 'val.bin'))
+train_ids_x = np.array(train_data_x, dtype=np.uint32)
+train_ids_y = np.array(train_data_y, dtype=np.uint32)
+val_ids_x = np.array(val_data_x, dtype=np.uint32)
+val_ids_y = np.array(val_data_y, dtype=np.uint32)
+train_ids_x.tofile(os.path.join(os.path.dirname(__file__), 'train_x.bin'))
+train_ids_y.tofile(os.path.join(os.path.dirname(__file__), 'train_y.bin'))
+val_ids_x.tofile(os.path.join(os.path.dirname(__file__), 'val_x.bin'))
+val_ids_y.tofile(os.path.join(os.path.dirname(__file__), 'val_y.bin'))
 
 # save the meta information as well, to help us encode/decode later
 meta = {
-    'vocab_size': vocab_size,
-    'itos': itos,
-    'stoi': stoi,
+    'vocab_size': 2**16
 }
 with open(os.path.join(os.path.dirname(__file__), 'meta.pkl'), 'wb') as f:
     pickle.dump(meta, f)
