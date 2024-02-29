@@ -24,6 +24,7 @@ from contextlib import nullcontext
 
 import numpy as np
 import torch
+import torch.nn as nn
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
 
@@ -216,7 +217,8 @@ def estimate_loss():
         for k in range(eval_iters):
             X0, X1, Y = get_batch(split)
             with ctx:
-                logits, loss = model(X0, X1, Y)
+                mask = nn.Transformer.generate_square_subsequent_mask(X1.shape[1], dtype=X1.dtype).to(device)
+                logits, loss = model(X0, X1, Y, mask)
             losses[k] = loss.item()
         out[split] = losses.mean()
     model.train()
@@ -292,7 +294,8 @@ while True:
             # looking at the source of that context manager, it just toggles this variable
             model.require_backward_grad_sync = (micro_step == gradient_accumulation_steps - 1)
         with ctx:
-            logits, loss = model(X0, X1, Y)
+            mask = nn.Transformer.generate_square_subsequent_mask(X1.shape[1], dtype=X1.dtype).to(device)
+            logits, loss = model(X0, X1, Y, mask)
             loss = loss / gradient_accumulation_steps # scale the loss to account for gradient accumulation
         # immediately async prefetch next batch while model is doing the forward pass on the GPU
         X0, X1, Y = get_batch('train')
