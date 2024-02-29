@@ -151,7 +151,7 @@ class AudioTransformer(nn.Module):
         decoder_emb = self.transformer.wte(decoder_idxs)
         decoder_pos = self.transformer.wpe(torch.arange(0, decoder_idxs.size(1), device=decoder_idxs.device))
         decoder_input = self.transformer.drop(decoder_emb + decoder_pos)
-        mask = nn.Transformer.generate_square_subsequent_mask(decoder_input.shape[1], dtype=decoder_input.dtype).to(decoder_input.device)
+        mask = nn.Transformer.generate_square_subsequent_mask(decoder_input.shape[1], dtype=decoder_input.dtype).to(device)
         for block in self.transformer.decoder:
             decoder_input = block(decoder_input, encoder_input, mask)
 
